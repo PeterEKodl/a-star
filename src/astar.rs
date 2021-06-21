@@ -141,7 +141,7 @@ impl Grid
 
     fn solve(&mut self, start_pos: Option<Position>, goal_pos: Option<Position>) -> (Option<Vec<Position>>, Option<Vec<Node>>)
     {
-        if start_pos.is_none() || start_pos.is_none()
+        if start_pos.is_none() || goal_pos.is_none()
         {
             return (None, None);
         }
@@ -209,10 +209,7 @@ impl Grid
                             value.parent_index = node.parent_index;
                         }
                     },
-                    None => 
-                    {
-                        node_list.push(node);
-                    }
+                    None =>  node_list.push(node)
                 }
 
             }
@@ -236,10 +233,9 @@ impl Grid
         {
             for pos in path
             {
-                match self.get_cell(pos.x as usize, pos.y as usize)
+                if let Some(Cell::Free) | Some(Cell::Visited) = self.get_cell(pos.x as usize, pos.y as usize)
                 {
-                    Some(Cell::Free) | Some(Cell::Visited) => self.set_cell(pos.x as usize, pos.y as usize, Cell::Path),
-                    _ => {}
+                    self.set_cell(pos.x as usize, pos.y as usize, Cell::Path);
                 }
             }
         }

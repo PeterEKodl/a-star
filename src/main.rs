@@ -81,13 +81,10 @@ fn handle_mouse(data: &mut Data, x: usize, y: usize)
         Mode::Wall => data.grid.set_cell(x, y, Cell::Wall),
         Mode::Goal => 
         {
-            match data.goal_pos
+            // Swaps out the cell.
+            if let Option::Some(pos) = data.goal_pos
             {
-                Option::Some(pos) =>
-                {
                     data.grid.set_cell(pos.x as usize, pos.y as usize, Cell::Free);
-                },
-                Option::None => {}
             }
             data.goal_pos = Some(Position{x: x as isize, y: y as isize});
             data.grid.set_cell(x, y, Cell::Goal);
@@ -95,13 +92,10 @@ fn handle_mouse(data: &mut Data, x: usize, y: usize)
         },
         Mode::Start =>
         {
-            match data.start_pos
+            // Swaps out the cell.
+            if let Option::Some(pos) = data.start_pos
             {
-                Option::Some(pos) =>
-                {
-                    data.grid.set_cell(pos.x as usize, pos.y as usize, Cell::Free);
-                },
-                Option::None => {}
+                data.grid.set_cell(pos.x as usize, pos.y as usize, Cell::Free);
             }
             data.start_pos = Some(Position{x: x as isize, y: y as isize});
             data.grid.set_cell(x, y, Cell::Start); 
