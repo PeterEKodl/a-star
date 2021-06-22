@@ -32,11 +32,11 @@ fn draw_grid(grid: &Grid, rustbox: &RustBox)
             {
                 Cell::Start => 
                 {
-                    rustbox.print_char(x, y, RB_BOLD, Color::Red, Color::Default, '@');
+                    rustbox.print_char(x, y, RB_BOLD, Color::Green, Color::Default, 'S');
                 },
                 Cell::Goal =>
                 {
-                    rustbox.print_char(x, y, RB_BOLD, Color::Green, Color::Default, 'X'); 
+                    rustbox.print_char(x, y, RB_BOLD, Color::Red, Color::Default, 'G'); 
                 },
                 Cell::Wall =>
                 {
@@ -48,11 +48,11 @@ fn draw_grid(grid: &Grid, rustbox: &RustBox)
                 },
                 Cell::Path =>
                 {
-                    rustbox.print_char(x, y, RB_BOLD, Color::Yellow, Color::Default, '.');
+                    rustbox.print_char(x, y, RB_NORMAL, Color::Yellow, Color::Default, '.');
                 },
                 Cell::Visited =>
                 {
-                    rustbox.print_char(x, y, RB_NORMAL, Color::Cyan, Color::Default, '.');
+                    rustbox.print_char(x, y, RB_NORMAL, Color::Green, Color::Default, '.');
                 }
             }
         }

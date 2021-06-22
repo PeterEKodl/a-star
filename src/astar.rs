@@ -219,6 +219,7 @@ impl Grid
     pub fn create_path(&mut self, start_pos: Option<Position>, goal_pos: Option<Position>)
     {
         let solution = self.solve(start_pos, goal_pos);
+        // Add the visited nodes to the grid.
         if let Some(visited) = solution.1
         {
             for node in visited
@@ -229,6 +230,7 @@ impl Grid
                 }
             }
         }
+        // Add the path nodes to the grid.
         if let Some(path) = solution.0
         {
             for pos in path
