@@ -1,5 +1,7 @@
 extern crate rayon;
 use rayon::prelude::*;
+extern crate rand;
+use rand::Rng;
 
 #[derive(Clone, Copy, PartialEq)]
 pub struct Position
@@ -125,20 +127,17 @@ impl Grid
     }
 
     // Clears path and visited cells
-    fn clear_path(&mut self)
+    pub fn clear_path(&mut self)
     {
-        for x in self.memory.iter_mut()
-        {
-            match *x
-            {
-                Cell::Path | Cell::Visited => *x = Cell::Free,
-                _ => {}
-            }
-        }
+        self.memory.par_iter_mut().for_each(|x| if let Cell::Path | Cell::Visited = x {*x = Cell::Free;})
     }
 
-    
-
+    pub fn randomize(&mut self)
+    {
+        self.clear();
+        self.memory.par_iter_mut().for_each(|x| *x = if rand::thread_rng().gen_ratio(1, 4){ Cell::Wall } else { Cell::Free });
+    }
+        
     fn solve(&mut self, start_pos: Option<Position>, goal_pos: Option<Position>) -> (Option<Vec<Position>>, Option<Vec<Node>>)
     {
         if start_pos.is_none() || goal_pos.is_none()
@@ -151,16 +150,17 @@ impl Grid
 
         let heuristic = |a:&Position, b:&Position| ((a.x - b.x).pow(2) + (a.y-b.y).pow(2)) as usize; 
         
-        
         let mut node_list = Vec::new();
 
         node_list.push(Node::new(start_pos, None, 0, heuristic(&start_pos, &goal_pos)));
         
         loop
         {
-            // Get the smallest node from the open list, if there is none, the function returns
-            // None
-            let current_node_index: usize = match node_list.par_iter().enumerate().filter(|x| x.1.open).min_by(|a, b| a.1.cmp(b.1))
+            // Get the smallest node from the open list, if there is none, the function returns None
+            let current_node_index: usize = match node_list.par_iter()
+                .enumerate()
+                .filter(|x| x.1.open)
+                .min_by(|a, b| a.1.cmp(b.1))
             {
                 Some((value, _)) => value,
                 None => return (None, None)
@@ -182,6 +182,11 @@ impl Grid
                     continue;
                 }
 
+                /*
+                 * On finding the goal node, the path is pushed into a result vector
+                 * by means of recusively finding the parent node until it reaches
+                 * the goal node.
+                 */
                 if node.pos == goal_pos
                 {
                     let mut path = Vec::new();
@@ -211,7 +216,6 @@ impl Grid
                     },
                     None =>  node_list.push(node)
                 }
-
             }
         }
     }
@@ -240,14 +244,6 @@ impl Grid
                     self.set_cell(pos.x as usize, pos.y as usize, Cell::Path);
                 }
             }
-        }
-        
-        
-    }
-
-    
+        }   
+    }    
 }
-
-
-
-

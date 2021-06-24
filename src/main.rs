@@ -48,11 +48,11 @@ fn draw_grid(grid: &Grid, rustbox: &RustBox)
                 },
                 Cell::Path =>
                 {
-                    rustbox.print_char(x, y, RB_NORMAL, Color::Yellow, Color::Default, '.');
+                    rustbox.print_char(x, y, RB_BOLD, Color::Red, Color::Default, '.');
                 },
                 Cell::Visited =>
                 {
-                    rustbox.print_char(x, y, RB_NORMAL, Color::Green, Color::Default, '.');
+                    rustbox.print_char(x, y, RB_NORMAL, Color::Yellow, Color::Default, '.');
                 }
             }
         }
@@ -70,7 +70,7 @@ fn draw(rustbox: &RustBox, data: &Data)
         Mode::Start => "Start"
     };
     rustbox.print(0, 0, RB_REVERSE, Color::White, Color::Default, 
-                  format!("[{}] | w Wall | f Free | g Goal | s Start | c Clear | p Solve | q Quit", mode).as_str());
+                  format!("[{}] | w Wall | f Free | g Goal | s Start | c Clear | p Solve | r Randomize | q Quit", mode).as_str());
 }
 
 fn handle_mouse(data: &mut Data, x: usize, y: usize)
@@ -81,24 +81,32 @@ fn handle_mouse(data: &mut Data, x: usize, y: usize)
         Mode::Wall => data.grid.set_cell(x, y, Cell::Wall),
         Mode::Goal => 
         {
+            data.grid.clear_path();
             // Swaps out the cell.
-            if let Option::Some(pos) = data.goal_pos
+            if let Some(Cell::Free) = data.grid.get_cell(x, y)
             {
-                    data.grid.set_cell(pos.x as usize, pos.y as usize, Cell::Free);
+                if let Option::Some(pos) = data.goal_pos
+                {
+                        data.grid.set_cell(pos.x as usize, pos.y as usize, Cell::Free);
+                }
+                data.goal_pos = Some(Position{x: x as isize, y: y as isize});
+                data.grid.set_cell(x, y, Cell::Goal);
             }
-            data.goal_pos = Some(Position{x: x as isize, y: y as isize});
-            data.grid.set_cell(x, y, Cell::Goal);
 
         },
         Mode::Start =>
         {
-            // Swaps out the cell.
-            if let Option::Some(pos) = data.start_pos
+            data.grid.clear_path();
+            if let Some(Cell::Free) = data.grid.get_cell(x, y)
             {
-                data.grid.set_cell(pos.x as usize, pos.y as usize, Cell::Free);
+                // Swaps out the cell.
+                if let Option::Some(pos) = data.start_pos
+                {
+                    data.grid.set_cell(pos.x as usize, pos.y as usize, Cell::Free);
+                }
+                data.start_pos = Some(Position{x: x as isize, y: y as isize});
+                data.grid.set_cell(x, y, Cell::Start); 
             }
-            data.start_pos = Some(Position{x: x as isize, y: y as isize});
-            data.grid.set_cell(x, y, Cell::Start); 
         }
 
     }
@@ -131,6 +139,11 @@ fn main() {
                     Key::Char('s') => data.mode = Mode::Start,
                     Key::Char('c') => data.grid.clear(),
                     Key::Char('p') => data.grid.create_path(data.start_pos, data.goal_pos),
+                    Key::Char('r') => {
+                        data.start_pos = None; 
+                        data.goal_pos = None; 
+                        data.grid.randomize();
+                    },
                     _ => {}
                 }
             },
