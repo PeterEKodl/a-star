@@ -134,7 +134,6 @@ impl Grid
 
     pub fn randomize(&mut self)
     {
-        self.clear();
         self.memory.par_iter_mut().for_each(|x| *x = if rand::thread_rng().gen_ratio(1, 4){ Cell::Wall } else { Cell::Free });
     }
         
