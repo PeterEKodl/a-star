@@ -1,25 +1,23 @@
 extern crate rustbox;
 
 use rustbox::*;
-mod astar; use astar::*;
+mod astar;
+use astar::*;
 
 enum Mode
 {
     Start,
     Goal,
     Wall,
-    Free
+    Free,
 }
-
-
 
 struct Data
 {
     pub grid: Grid,
     pub mode: Mode,
     pub start_pos: Option<Position>,
-    pub goal_pos: Option<Position>
-
+    pub goal_pos: Option<Position>,
 }
 
 fn draw_grid(grid: &Grid, rustbox: &RustBox)
@@ -28,28 +26,28 @@ fn draw_grid(grid: &Grid, rustbox: &RustBox)
     {
         for x in 0..grid.width
         {
-            match grid.get_cell(x, y).unwrap() 
+            match grid.get_cell(x, y).unwrap()
             {
-                Cell::Start => 
+                Cell::Start =>
                 {
                     rustbox.print_char(x, y, RB_BOLD, Color::Green, Color::Default, 'S');
-                },
+                }
                 Cell::Goal =>
                 {
-                    rustbox.print_char(x, y, RB_BOLD, Color::Red, Color::Default, 'G'); 
-                },
+                    rustbox.print_char(x, y, RB_BOLD, Color::Red, Color::Default, 'G');
+                }
                 Cell::Wall =>
                 {
                     rustbox.print_char(x, y, RB_NORMAL, Color::White, Color::Default, '#');
-                },
-                Cell::Free => 
+                }
+                Cell::Free =>
                 {
                     rustbox.print_char(x, y, RB_NORMAL, Color::White, Color::Default, '.');
-                },
+                }
                 Cell::Path =>
                 {
                     rustbox.print_char(x, y, RB_BOLD, Color::Red, Color::Default, '.');
-                },
+                }
                 Cell::Visited =>
                 {
                     rustbox.print_char(x, y, RB_NORMAL, Color::Yellow, Color::Default, '.');
@@ -61,16 +59,26 @@ fn draw_grid(grid: &Grid, rustbox: &RustBox)
 
 fn draw(rustbox: &RustBox, data: &Data)
 {
-    draw_grid(&data.grid, &rustbox);
-    let mode:&str = match data.mode
+    draw_grid(&data.grid, rustbox);
+    let mode: &str = match data.mode
     {
         Mode::Wall => "Wall",
         Mode::Free => "Free",
         Mode::Goal => "Goal",
-        Mode::Start => "Start"
+        Mode::Start => "Start",
     };
-    rustbox.print(0, 0, RB_REVERSE, Color::White, Color::Default, 
-                  format!("[{}] | w Wall | f Free | g Goal | s Start | c Clear | p Solve | r Randomize | q Quit", mode).as_str());
+    rustbox.print(
+        0,
+        0,
+        RB_REVERSE,
+        Color::White,
+        Color::Default,
+        format!(
+            "[{}] | w Wall | f Free | g Goal | s Start | c Clear | p Solve | r Randomize | q Quit",
+            mode
+        )
+        .as_str(),
+    );
 }
 
 fn handle_mouse(data: &mut Data, x: usize, y: usize)
@@ -79,7 +87,7 @@ fn handle_mouse(data: &mut Data, x: usize, y: usize)
     {
         Mode::Free => data.grid.set_cell(x, y, Cell::Free),
         Mode::Wall => data.grid.set_cell(x, y, Cell::Wall),
-        Mode::Goal => 
+        Mode::Goal =>
         {
             data.grid.clear_path();
             // Swaps out the cell.
@@ -87,13 +95,16 @@ fn handle_mouse(data: &mut Data, x: usize, y: usize)
             {
                 if let Option::Some(pos) = data.goal_pos
                 {
-                        data.grid.set_cell(pos.x as usize, pos.y as usize, Cell::Free);
+                    data.grid
+                        .set_cell(pos.x as usize, pos.y as usize, Cell::Free);
                 }
-                data.goal_pos = Some(Position{x: x as isize, y: y as isize});
+                data.goal_pos = Some(Position {
+                    x: x as isize,
+                    y: y as isize,
+                });
                 data.grid.set_cell(x, y, Cell::Goal);
             }
-
-        },
+        }
         Mode::Start =>
         {
             data.grid.clear_path();
@@ -102,24 +113,27 @@ fn handle_mouse(data: &mut Data, x: usize, y: usize)
                 // Swaps out the cell.
                 if let Option::Some(pos) = data.start_pos
                 {
-                    data.grid.set_cell(pos.x as usize, pos.y as usize, Cell::Free);
+                    data.grid
+                        .set_cell(pos.x as usize, pos.y as usize, Cell::Free);
                 }
-                data.start_pos = Some(Position{x: x as isize, y: y as isize});
-                data.grid.set_cell(x, y, Cell::Start); 
+                data.start_pos = Some(Position {
+                    x: x as isize,
+                    y: y as isize,
+                });
+                data.grid.set_cell(x, y, Cell::Start);
             }
         }
-
     }
 }
-fn main() {
+fn main()
+{
     let rustbox = RustBox::init(InitOptions::default()).unwrap();
-    rustbox.set_input_mode(InputMode::EscMouse); 
-    let mut data = Data 
-    {
+    rustbox.set_input_mode(InputMode::EscMouse);
+    let mut data = Data {
         mode: Mode::Wall,
         grid: Grid::new(rustbox.width(), rustbox.height()),
         start_pos: Option::None,
-        goal_pos: Option::None
+        goal_pos: Option::None,
     };
 
     loop
@@ -128,30 +142,27 @@ fn main() {
         rustbox.present();
         match rustbox.poll_event(false).unwrap()
         {
-            Event::KeyEvent(c) => 
+            Event::KeyEvent(c) => match c
             {
-                match c
+                Key::Char('q') => break,
+                Key::Char('w') => data.mode = Mode::Wall,
+                Key::Char('f') => data.mode = Mode::Free,
+                Key::Char('g') => data.mode = Mode::Goal,
+                Key::Char('s') => data.mode = Mode::Start,
+                Key::Char('c') => data.grid.clear(),
+                Key::Char('p') => data.grid.create_path(data.start_pos, data.goal_pos),
+                Key::Char('r') =>
                 {
-                    Key::Char('q') => break,
-                    Key::Char('w') => data.mode = Mode::Wall,
-                    Key::Char('f') => data.mode = Mode::Free,
-                    Key::Char('g') => data.mode = Mode::Goal,
-                    Key::Char('s') => data.mode = Mode::Start,
-                    Key::Char('c') => data.grid.clear(),
-                    Key::Char('p') => data.grid.create_path(data.start_pos, data.goal_pos),
-                    Key::Char('r') => {
-                        data.start_pos = None; 
-                        data.goal_pos = None; 
-                        data.grid.randomize();
-                    },
-                    _ => {}
+                    data.start_pos = None;
+                    data.goal_pos = None;
+                    data.grid.randomize();
                 }
+                _ =>
+                {}
             },
-            Event::MouseEvent(Mouse::Left, x, y) =>
-            {
-                handle_mouse(&mut data, x as usize, y as usize)
-            },
-            _ => {}
+            Event::MouseEvent(Mouse::Left, x, y) => handle_mouse(&mut data, x as usize, y as usize),
+            _ =>
+            {}
         }
     }
 }

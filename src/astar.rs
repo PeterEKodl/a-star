@@ -6,10 +6,8 @@ use rand::Rng;
 #[derive(Clone, Copy, PartialEq)]
 pub struct Position
 {
-
     pub x: isize,
-    pub y: isize
-
+    pub y: isize,
 }
 
 impl std::ops::Add for Position
@@ -17,38 +15,39 @@ impl std::ops::Add for Position
     type Output = Self;
     fn add(self, other: Self) -> Self
     {
-        Self{x: self.x + other.x, y: self.y + other.y}
+        Self {
+            x: self.x + other.x,
+            y: self.y + other.y,
+        }
     }
 }
 
-#[derive(Clone,Copy)]
+#[derive(Clone, Copy)]
 struct Node
 {
-    pub pos:Position,
-    pub parent_index:Option<usize>,
+    pub pos: Position,
+    pub parent_index: Option<usize>,
     pub g: usize,
     pub h: usize,
-    pub open:bool
+    pub open: bool,
 }
 
 impl Node
 {
     fn new(pos: Position, parent_index: Option<usize>, g: usize, h: usize) -> Self
     {
-        Self
-        {
+        Self {
             pos,
             parent_index,
             g,
             h,
-            open: true
+            open: true,
         }
     }
     fn f(&self) -> usize
     {
         self.g + self.h
     }
-
 }
 
 impl PartialEq for Node
@@ -59,7 +58,7 @@ impl PartialEq for Node
     }
 }
 
-impl Eq for Node{}
+impl Eq for Node {}
 
 impl PartialOrd for Node
 {
@@ -73,7 +72,7 @@ impl Ord for Node
 {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering
     {
-        (self.f()).cmp(&other.f())       
+        (self.f()).cmp(&other.f())
     }
 }
 
@@ -85,25 +84,27 @@ pub enum Cell
     Wall,
     Free,
     Path,
-    Visited
-
+    Visited,
 }
 
 pub struct Grid
 {
-    memory: std::vec::Vec<Cell>, 
+    memory: std::vec::Vec<Cell>,
     pub width: usize,
-    pub height: usize
+    pub height: usize,
 }
 
 impl Grid
 {
-
     pub fn new(width: usize, height: usize) -> Self
     {
-        let mut memory: Vec<Cell> = std::vec::Vec::with_capacity(width*height);
-        memory.resize(width*height, Cell::Free);
-        Self {memory, width, height}
+        let mut memory: Vec<Cell> = std::vec::Vec::with_capacity(width * height);
+        memory.resize(width * height, Cell::Free);
+        Self {
+            memory,
+            width,
+            height,
+        }
     }
 
     pub fn get_cell(&self, x: usize, y: usize) -> Option<Cell>
@@ -112,12 +113,12 @@ impl Grid
         {
             return None;
         }
-        Some(self.memory[x + y*self.width])
+        Some(self.memory[x + y * self.width])
     }
 
-    pub fn set_cell(&mut self, x: usize, y:usize, value:Cell)
+    pub fn set_cell(&mut self, x: usize, y: usize, value: Cell)
     {
-        self.memory[x + y*self.width] = value;
+        self.memory[x + y * self.width] = value;
     }
 
     // Clears the entire grid
@@ -129,15 +130,33 @@ impl Grid
     // Clears path and visited cells
     pub fn clear_path(&mut self)
     {
-        self.memory.par_iter_mut().for_each(|x| if let Cell::Path | Cell::Visited = x {*x = Cell::Free;})
+        self.memory.par_iter_mut().for_each(|x| {
+            if let Cell::Path | Cell::Visited = x
+            {
+                *x = Cell::Free;
+            }
+        })
     }
 
     pub fn randomize(&mut self)
     {
-        self.memory.par_iter_mut().for_each(|x| *x = if rand::thread_rng().gen_ratio(1, 4){ Cell::Wall } else { Cell::Free });
+        self.memory.par_iter_mut().for_each(|x| {
+            *x = if rand::thread_rng().gen_ratio(1, 4)
+            {
+                Cell::Wall
+            }
+            else
+            {
+                Cell::Free
+            }
+        });
     }
-        
-    fn solve(&mut self, start_pos: Option<Position>, goal_pos: Option<Position>) -> (Option<Vec<Position>>, Option<Vec<Node>>)
+
+    fn solve(
+        &mut self,
+        start_pos: Option<Position>,
+        goal_pos: Option<Position>,
+    ) -> (Option<Vec<Position>>, Option<Vec<Node>>)
     {
         if start_pos.is_none() || goal_pos.is_none()
         {
@@ -147,27 +166,34 @@ impl Grid
         let start_pos = start_pos.unwrap();
         let goal_pos = goal_pos.unwrap();
 
-        let heuristic = |a:&Position, b:&Position| ((a.x - b.x).pow(2) + (a.y-b.y).pow(2)) as usize; 
-        
+        let heuristic =
+            |a: &Position, b: &Position| ((a.x - b.x).pow(2) + (a.y - b.y).pow(2)) as usize;
+
         let mut node_list = Vec::new();
 
-        node_list.push(Node::new(start_pos, None, 0, heuristic(&start_pos, &goal_pos)));
-        
+        node_list.push(Node::new(
+            start_pos,
+            None,
+            0,
+            heuristic(&start_pos, &goal_pos),
+        ));
+
         loop
         {
             // Get the smallest node from the open list, if there is none, the function returns None
-            let current_node_index: usize = match node_list.par_iter()
+            let current_node_index: usize = match node_list
+                .par_iter()
                 .enumerate()
                 .filter(|x| x.1.open)
                 .min_by(|a, b| a.1.cmp(b.1))
             {
                 Some((value, _)) => value,
-                None => return (None, None)
+                None => return (None, None),
             };
-           
+
             node_list[current_node_index].open = false;
 
-            let mut offset = Position{x:-1, y:0};
+            let mut offset = Position { x: -1, y: 0 };
 
             for _ in 0..4
             {
@@ -175,8 +201,14 @@ impl Grid
                 offset.y = -offset.y;
 
                 let node_pos = node_list[current_node_index].pos + offset;
-                let mut node = Node::new(node_pos, Some(current_node_index), node_list[current_node_index].g + 1, heuristic(&node_pos, &goal_pos));
-                if let Some(Cell::Wall) | None = self.get_cell(node_pos.x as usize, node_pos.y as usize)
+                let mut node = Node::new(
+                    node_pos,
+                    Some(current_node_index),
+                    node_list[current_node_index].g + 1,
+                    heuristic(&node_pos, &goal_pos),
+                );
+                if let Some(Cell::Wall) | None =
+                    self.get_cell(node_pos.x as usize, node_pos.y as usize)
                 {
                     continue;
                 }
@@ -195,25 +227,25 @@ impl Grid
                         match node.parent_index
                         {
                             Some(index) => node = node_list[index],
-                            None => return (Some(path), Some(node_list))
+                            None => return (Some(path), Some(node_list)),
                         }
                     }
                 }
-                
+
                 // Check if the node is in the open list.
-                let identical_node = node_list.par_iter_mut().find_any(|x| x.pos == node.pos); 
+                let identical_node = node_list.par_iter_mut().find_any(|x| x.pos == node.pos);
 
                 match identical_node
                 {
-                    Some(value) => 
+                    Some(value) =>
                     {
                         if node.g < value.g && value.open
                         {
                             value.g = node.g;
                             value.parent_index = node.parent_index;
                         }
-                    },
-                    None =>  node_list.push(node)
+                    }
+                    None => node_list.push(node),
                 }
             }
         }
@@ -238,11 +270,12 @@ impl Grid
         {
             for pos in path
             {
-                if let Some(Cell::Free) | Some(Cell::Visited) = self.get_cell(pos.x as usize, pos.y as usize)
+                if let Some(Cell::Free) | Some(Cell::Visited) =
+                    self.get_cell(pos.x as usize, pos.y as usize)
                 {
                     self.set_cell(pos.x as usize, pos.y as usize, Cell::Path);
                 }
             }
-        }   
-    }    
+        }
+    }
 }
